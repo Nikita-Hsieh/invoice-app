@@ -8,7 +8,7 @@
 			</div>
 
 			<div class="right flex">
-				<div @click="toggleFilterMenu" class="filter flex" ref="filter">
+				<div @click="toggleFilterMenu" class="filter flex">
 					<span>Filter by status</span>
 					<img src="@/assets/icon-arrow-down.svg" alt="" />
 					<ul v-show="filterMenu" class="filter-menu">
@@ -20,7 +20,7 @@
 				</div>
 				<div @click="newInvoice" class="button flex">
 					<div class="inner-button flex">
-						<img src="@/assets/icon-plus.svg" alt="" />
+						<img src="@/assets/icon-plus.svg" />
 					</div>
 					<span>New Invoice</span>
 				</div>
@@ -38,6 +38,12 @@ export default {
 		}
 	},
 	components: {},
+	methods: {
+		newInvoice() {},
+		toggleFilterMenu() {
+			this.filterMenu = !this.filterMenu
+		},
+	},
 }
 </script>
 
@@ -69,11 +75,7 @@ export default {
 			.filter {
 				position: relative;
 				margin-right: 40px;
-
-				span,
-				img {
-					pointer-events: none;
-				}
+				cursor: pointer;
 
 				img {
 					margin-left: 12px;
