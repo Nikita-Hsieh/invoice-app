@@ -115,7 +115,7 @@
 				</div>
 				<div class="input flex flex-column">
 					<label for="paymentTerms">Payment Term</label>
-					<select disabled type="text" id="paymentTerms" v-model="paymentTerms">
+					<select id="paymentTerms" v-model="paymentTerms">
 						<option value="30">Net 30 Days</option>
 						<option value="60">Net 60 Days</option>
 					</select>
@@ -156,10 +156,11 @@
 							<img
 								@click="deleteInvoiceItem(item.id)"
 								src="@/assets/icon-delete.svg"
+								style="cursor: pointer"
 							/>
 						</tr>
 					</table>
-					<div @click="addNewInvoice" class="flex button">
+					<div @click="addNewInvoiceItem" class="flex button">
 						<img src="@/assets/icon-plus.svg" alt="" />
 						Add New Item
 					</div>
@@ -184,6 +185,7 @@
 
 <script>
 import { mapMutations } from 'vuex'
+import { uid } from 'uid'
 export default {
 	name: 'invoiceModal',
 	data() {
@@ -213,10 +215,43 @@ export default {
 			invoiceTotal: 0,
 		}
 	},
+	created() {
+		//get current date
+		this.invoiceDateUnix = Date.now()
+		this.invoiceDate = new Date(this.invoiceDateUnix).toLocaleDateString(
+			'en-us',
+			this.dateOptions
+		)
+	},
 	methods: {
 		...mapMutations(['TOGGLE_INVOICE']),
 		closeInvoice() {
 			this.TOGGLE_INVOICE()
+		},
+		addNewInvoiceItem() {
+			this.invoiceItemList.push({
+				id: uid(),
+				itemName: '',
+				qty: '',
+				price: 0,
+				total: 0,
+			})
+		},
+		deleteInvoiceItem(id) {
+			this.invoiceItemList = this.invoiceItemList.filter(
+				(item) => item.id !== id
+			)
+		},
+	},
+	watch: {
+		paymentTerms() {
+			const futureDate = new Date()
+			this.paymentDueDateUnix = futureDate.setDate(
+				futureDate.getDate() + parseInt(this.paymentTerms)
+			)
+			this.paymentDueDate = new Date(
+				this.paymentDueDateUnix
+			).toLocaleDateString('en-us', this.dateOptions)
 		},
 	},
 }
