@@ -5,6 +5,7 @@
 		class="invoice-wrap flex flex-column"
 	>
 		<form @submit.prevent="submitForm" class="invoice-content">
+			<Loading v-show="loading" />
 			<h1>New Invoice</h1>
 
 			<!-- Bill From -->
@@ -170,11 +171,15 @@
 			<!-- Save/Exit -->
 			<div class="save flex">
 				<div class="left">
-					<button @click="closeInvoice" class="red">Cancel</button>
+					<button type="button" @click="closeInvoice" class="red">
+						Cancel
+					</button>
 				</div>
 				<div class="right flex">
-					<button @click="saveDraft" class="dark-purple">Save Draft</button>
-					<button @click="publishInvoice" class="dark-purple">
+					<button type="submit " @click="saveDraft" class="dark-purple">
+						Save Draft
+					</button>
+					<button type="submit" @click="publishInvoice" class="dark-purple">
 						Create Invoice
 					</button>
 				</div>
@@ -184,6 +189,9 @@
 </template>
 
 <script>
+import db from '../firebase/firebaseinit'
+import Loading from '../components/Loading.vue'
+import { collection, doc, setDoc } from 'firebase/firestore'
 import { mapMutations } from 'vuex'
 import { uid } from 'uid'
 export default {
@@ -191,6 +199,7 @@ export default {
 	data() {
 		return {
 			dateOptions: { year: 'numeric', month: 'short', day: 'numeric' },
+			loading: null,
 			docId: null,
 			loading: null,
 			billerStreetAddress: null,
@@ -215,6 +224,9 @@ export default {
 			invoiceTotal: 0,
 		}
 	},
+	components: {
+		Loading,
+	},
 	created() {
 		//get current date
 		this.invoiceDateUnix = Date.now()
@@ -224,7 +236,10 @@ export default {
 		)
 	},
 	methods: {
-		...mapMutations(['TOGGLE_INVOICE']),
+		...mapMutations(['TOGGLE_INVOICE', 'TOGGLE_MODAL']),
+		checkClick(e) {
+			if (e.target === this.$refs.invoiceWrap) this.TOGGLE_MODAL()
+		},
 		closeInvoice() {
 			this.TOGGLE_INVOICE()
 		},
@@ -241,6 +256,63 @@ export default {
 			this.invoiceItemList = this.invoiceItemList.filter(
 				(item) => item.id !== id
 			)
+		},
+
+		calInvoiceTotal() {
+			this.invoiceTotal = 0
+			this.invoiceItemList.forEach((item) => {
+				this.invoiceTotal += Number(item.total || 0)
+			})
+		},
+		publishInvoice() {
+			this.invoicePending = true
+		},
+		saveDraft() {
+			this.invoiceDraft = true
+		},
+		async uploadInvoice() {
+			if (this.invoiceItemList.length <= 0) {
+				alert('Please ensure to fill out item!')
+				return
+			}
+
+			this.loading = true
+
+			this.calInvoiceTotal()
+
+			const invoiceRef = doc(collection(db, 'invoices'))
+
+			await setDoc(invoiceRef, {
+				invoiceId: uid(6),
+				billerStreetAddress: this.billerStreetAddress,
+				billerCity: this.billerCity,
+				billerZipCode: this.billerZipCode,
+				billerCountry: this.billerCountry,
+				clientName: this.clientName,
+				clientEmail: this.clientEmail,
+				clientStreetAddress: this.clientStreetAddress,
+				clientCity: this.clientCity,
+				clientZipCode: this.clientZipCode,
+				clientCountry: this.clientCountry,
+				invoiceDate: this.invoiceDate,
+				invoiceDateUnix: this.invoiceDateUnix,
+				paymentTerms: this.paymentTerms,
+				paymentDueDate: this.paymentDueDate,
+				paymentDueDateUnix: this.paymentDueDateUnix,
+				productDescription: this.productDescription,
+				invoiceItemList: this.invoiceItemList,
+				invoiceTotal: this.invoiceTotal,
+				invoicePending: this.invoicePending,
+				invoiceDraft: this.invoiceDraft,
+				invoicePaid: null,
+			})
+
+			this.loading = false
+
+			this.TOGGLE_INVOICE()
+		},
+		submitForm() {
+			this.uploadInvoice()
 		},
 	},
 	watch: {
