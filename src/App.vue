@@ -2,7 +2,7 @@
 import Navigation from './components/Navigation.vue'
 import InvoiceModal from './components/InvoiceModal.vue'
 import Modal from './components/Modal.vue'
-import { mapState } from 'vuex/dist/vuex.cjs.js'
+import { mapState, mapActions } from 'vuex/dist/vuex.cjs.js'
 
 export default {
 	data() {
@@ -16,10 +16,12 @@ export default {
 		Modal,
 	},
 	created() {
+		this.GET_INVOICES()
 		this.checkScreen()
 		window.addEventListener('resize', this.checkScreen)
 	},
 	methods: {
+		...mapActions(['GET_INVOICES']),
 		checkScreen() {
 			const windowScreen = window.innerWidth
 
@@ -32,13 +34,13 @@ export default {
 		},
 	},
 	computed: {
-		...mapState(['invoiceModal', 'modalActive']),
+		...mapState(['invoiceModal', 'modalActive', 'invoicesLoaded']),
 	},
 }
 </script>
 
 <template>
-	<div>
+	<div v-if="invoicesLoaded">
 		<div v-if="!mobile" class="app flex flex-column">
 			<Navigation />
 			<div class="app-content flex flex-column">
