@@ -423,6 +423,11 @@ export default {
 				this.paymentDueDateUnix
 			).toLocaleDateString('en-us', this.dateOptions)
 		},
+		editInvoice() {
+			if (!this.editInvoice) {
+				this.currentInvoice = this.currentInvoiceArray[0]
+			}
+		},
 	},
 }
 </script>
