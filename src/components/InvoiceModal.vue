@@ -6,7 +6,8 @@
 	>
 		<form @submit.prevent="submitForm" class="invoice-content">
 			<Loading v-show="loading" />
-			<h1>New Invoice</h1>
+			<h1 v-if="!editInvoice">New Invoice</h1>
+			<h1 v-else>Edit Invoice</h1>
 
 			<!-- Bill From -->
 			<div class="bill-from flex flex-column">
@@ -50,7 +51,7 @@
 			<div class="bill-to flex flex-column">
 				<h4>Bill To</h4>
 				<div class="input flex flex-column">
-					<label for="clientName">Clint's Name</label>
+					<label for="clientName">Client's Name</label>
 					<input required type="text" id="clientName" v-model="clientName" />
 				</div>
 				<div class="input flex flex-column">
@@ -58,7 +59,7 @@
 					<input required type="text" id="clientEmail" v-model="clientEmail" />
 				</div>
 				<div class="input flex flex-column">
-					<label for="clientStreetAddress">Client Street Address</label>
+					<label for="clientStreetAddress">Street Address</label>
 					<input
 						required
 						type="text"
@@ -115,8 +116,8 @@
 					</div>
 				</div>
 				<div class="input flex flex-column">
-					<label for="paymentTerms">Payment Term</label>
-					<select id="paymentTerms" v-model="paymentTerms">
+					<label for="paymentTerms">Payment Terms</label>
+					<select required type="text" id="paymentTerms" v-model="paymentTerms">
 						<option value="30">Net 30 Days</option>
 						<option value="60">Net 60 Days</option>
 					</select>
@@ -124,7 +125,7 @@
 				<div class="input flex flex-column">
 					<label for="productDescription">Product Description</label>
 					<input
-						disabled
+						required
 						type="text"
 						id="productDescription"
 						v-model="productDescription"
@@ -137,7 +138,7 @@
 							<th class="item-name">Item Name</th>
 							<th class="qty">Qty</th>
 							<th class="price">Price</th>
-							<th class="total">Total</th>
+							<th class="total">Toal</th>
 						</tr>
 						<tr
 							class="table-items flex"
@@ -148,19 +149,18 @@
 								<input type="text" v-model="item.itemName" />
 							</td>
 							<td class="qty"><input type="text" v-model="item.qty" /></td>
-							<td class="price">
-								<input type="text" v-model="item.price" />
-							</td>
+							<td class="price"><input type="text" v-model="item.price" /></td>
 							<td class="total flex">
 								${{ (item.total = item.qty * item.price) }}
 							</td>
 							<img
 								@click="deleteInvoiceItem(item.id)"
 								src="@/assets/icon-delete.svg"
-								style="cursor: pointer"
+								alt=""
 							/>
 						</tr>
 					</table>
+
 					<div @click="addNewInvoiceItem" class="flex button">
 						<img src="@/assets/icon-plus.svg" alt="" />
 						Add New Item
@@ -176,11 +176,24 @@
 					</button>
 				</div>
 				<div class="right flex">
-					<button type="submit " @click="saveDraft" class="dark-purple">
+					<button
+						v-if="!editInvoice"
+						type="submit"
+						@click="saveDraft"
+						class="dark-purple"
+					>
 						Save Draft
 					</button>
-					<button type="submit" @click="publishInvoice" class="dark-purple">
+					<button
+						v-if="!editInvoice"
+						type="submit"
+						@click="publishInvoice"
+						class="purple"
+					>
 						Create Invoice
+					</button>
+					<button v-if="editInvoice" type="sumbit" class="purple">
+						Update Invoice
 					</button>
 				</div>
 			</div>
@@ -190,16 +203,15 @@
 
 <script>
 import db from '../firebase/firebaseinit'
-import Loading from '../components/Loading.vue'
-import { collection, doc, setDoc } from 'firebase/firestore'
-import { mapMutations } from 'vuex'
+import Loading from '../components/Loading'
+import { mapActions, mapMutations, mapState } from 'vuex'
 import { uid } from 'uid'
+import { collection, doc, setDoc, updateDoc } from 'firebase/firestore'
 export default {
 	name: 'invoiceModal',
 	data() {
 		return {
 			dateOptions: { year: 'numeric', month: 'short', day: 'numeric' },
-			loading: null,
 			docId: null,
 			loading: null,
 			billerStreetAddress: null,
@@ -228,21 +240,58 @@ export default {
 		Loading,
 	},
 	created() {
-		//get current date
-		this.invoiceDateUnix = Date.now()
-		this.invoiceDate = new Date(this.invoiceDateUnix).toLocaleDateString(
-			'en-us',
-			this.dateOptions
-		)
+		// get current date for invoice date field
+		if (!this.editInvoice) {
+			this.invoiceDateUnix = Date.now()
+			this.invoiceDate = new Date(this.invoiceDateUnix).toLocaleDateString(
+				'en-us',
+				this.dateOptions
+			)
+		}
+
+		if (this.editInvoice) {
+			const currentInvoice = this.currentInvoiceArray[0]
+			this.docId = currentInvoice.docId
+			this.billerStreetAddress = currentInvoice.billerStreetAddress
+			this.billerCity = currentInvoice.billerCity
+			this.billerZipCode = currentInvoice.billerZipCode
+			this.billerCountry = currentInvoice.billerCountry
+			this.clientName = currentInvoice.clientName
+			this.clientEmail = currentInvoice.clientEmail
+			this.clientStreetAddress = currentInvoice.clientStreetAddress
+			this.clientCity = currentInvoice.clientCity
+			this.clientZipCode = currentInvoice.clientZipCode
+			this.clientCountry = currentInvoice.clientCountry
+			this.invoiceDateUnix = currentInvoice.invoiceDateUnix
+			this.invoiceDate = currentInvoice.invoiceDate
+			this.paymentTerms = currentInvoice.paymentTerms
+			this.paymentDueDateUnix = currentInvoice.paymentDueDateUnix
+			this.paymentDueDate = currentInvoice.paymentDueDate
+			this.productDescription = currentInvoice.productDescription
+			this.invoicePending = currentInvoice.invoicePending
+			this.invoiceDraft = currentInvoice.invoiceDraft
+			this.invoiceItemList = currentInvoice.invoiceItemList
+			this.invoiceTotal = currentInvoice.invoiceTotal
+		}
 	},
 	methods: {
-		...mapMutations(['TOGGLE_INVOICE', 'TOGGLE_MODAL']),
+		...mapMutations(['TOGGLE_INVOICE', 'TOGGLE_MODAL', 'TOGGLE_EDIT_INVOICE']),
+
+		...mapActions(['UPDATE_INVOICE', 'GET_INVOICES']),
+
 		checkClick(e) {
-			if (e.target === this.$refs.invoiceWrap) this.TOGGLE_MODAL()
+			if (e.target === this.$refs.invoiceWrap) {
+				this.TOGGLE_MODAL()
+			}
 		},
+
 		closeInvoice() {
 			this.TOGGLE_INVOICE()
+			if (this.editInvoice) {
+				this.TOGGLE_EDIT_INVOICE()
+			}
 		},
+
 		addNewInvoiceItem() {
 			this.invoiceItemList.push({
 				id: uid(),
@@ -252,6 +301,7 @@ export default {
 				total: 0,
 			})
 		},
+
 		deleteInvoiceItem(id) {
 			this.invoiceItemList = this.invoiceItemList.filter(
 				(item) => item.id !== id
@@ -261,28 +311,30 @@ export default {
 		calInvoiceTotal() {
 			this.invoiceTotal = 0
 			this.invoiceItemList.forEach((item) => {
-				this.invoiceTotal += Number(item.total || 0)
+				this.invoiceTotal += item.total
 			})
 		},
+
 		publishInvoice() {
 			this.invoicePending = true
 		},
+
 		saveDraft() {
 			this.invoiceDraft = true
 		},
+
 		async uploadInvoice() {
 			if (this.invoiceItemList.length <= 0) {
-				alert('Please ensure to fill out item!')
+				alert('Please ensure you filled out work items!')
 				return
 			}
 
 			this.loading = true
-
 			this.calInvoiceTotal()
 
-			const invoiceRef = doc(collection(db, 'invoices'))
+			const newDocRef = doc(collection(db, 'invoices')) // ⬅ v9 modular
 
-			await setDoc(invoiceRef, {
+			await setDoc(newDocRef, {
 				invoiceId: uid(6),
 				billerStreetAddress: this.billerStreetAddress,
 				billerCity: this.billerCity,
@@ -308,12 +360,58 @@ export default {
 			})
 
 			this.loading = false
-
 			this.TOGGLE_INVOICE()
+			this.GET_INVOICES()
+		},
+		async updateInvoice() {
+			if (this.invoiceItemList.length <= 0) {
+				alert('Please ensure you filled out work items!')
+				return
+			}
+
+			this.loading = true
+			this.calInvoiceTotal()
+
+			const invoiceRef = doc(db, 'invoices', this.docId) // ⬅ v9 modular
+
+			await updateDoc(invoiceRef, {
+				billerStreetAddress: this.billerStreetAddress,
+				billerCity: this.billerCity,
+				billerZipCode: this.billerZipCode,
+				billerCountry: this.billerCountry,
+				clientName: this.clientName,
+				clientEmail: this.clientEmail,
+				clientStreetAddress: this.clientStreetAddress,
+				clientCity: this.clientCity,
+				clientZipCode: this.clientZipCode,
+				clientCountry: this.clientCountry,
+				paymentTerms: this.paymentTerms,
+				paymentDueDate: this.paymentDueDate,
+				paymentDueDateUnix: this.paymentDueDateUnix,
+				productDescription: this.productDescription,
+				invoiceItemList: this.invoiceItemList,
+				invoiceTotal: this.invoiceTotal,
+			})
+
+			this.loading = false
+
+			const data = {
+				docId: this.docId,
+				routeId: this.$route.params.invoiceId,
+			}
+
+			this.UPDATE_INVOICE(data)
 		},
 		submitForm() {
+			if (this.editInvoice) {
+				this.updateInvoice()
+				return
+			}
 			this.uploadInvoice()
 		},
+	},
+	computed: {
+		...mapState(['editInvoice', 'currentInvoiceArray']),
 	},
 	watch: {
 		paymentTerms() {
@@ -334,7 +432,6 @@ export default {
 	position: fixed;
 	top: 0;
 	left: 0;
-	background-color: transparent;
 	width: 100%;
 	height: 100vh;
 	overflow: scroll;
@@ -372,21 +469,24 @@ export default {
 			margin-bottom: 24px;
 		}
 
-		.bill-from,
-		.bill-to {
+		// Bill To / Bill From
+		.bill-to,
+		.bill-from {
 			margin-bottom: 48px;
 
 			.location-details {
-				gap: 1rem;
+				gap: 16px;
 				div {
 					flex: 1;
 				}
 			}
 		}
 
+		// Invoice Work
+
 		.invoice-work {
 			.payment {
-				gap: 1.5rem;
+				gap: 24px;
 				div {
 					flex: 1;
 				}
@@ -396,9 +496,10 @@ export default {
 				.item-list {
 					width: 100%;
 
+					// Item Table Styling
 					.table-heading,
 					.table-items {
-						gap: 1rem;
+						gap: 16px;
 						font-size: 12px;
 
 						.item-name {
@@ -418,38 +519,38 @@ export default {
 							align-self: center;
 						}
 					}
+
+					.table-heading {
+						margin-bottom: 16px;
+
+						th {
+							text-align: left;
+						}
+					}
+
+					.table-items {
+						position: relative;
+						margin-bottom: 24px;
+
+						img {
+							position: absolute;
+							top: 15px;
+							right: 0;
+							width: 12px;
+							height: 16px;
+						}
+					}
 				}
 
 				.button {
 					color: #fff;
-					background-color: #292545;
+					background-color: #252945;
 					align-items: center;
 					justify-content: center;
 					width: 100%;
 
 					img {
 						margin-right: 4px;
-					}
-				}
-
-				.table-heading {
-					margin-bottom: 16px;
-
-					th {
-						text-align: left;
-					}
-				}
-
-				.table-items {
-					position: relative;
-					margin-bottom: 24px;
-
-					img {
-						position: absolute;
-						top: 15px;
-						right: 0;
-						width: 12px;
-						height: 16px;
 					}
 				}
 			}
@@ -481,8 +582,8 @@ export default {
 	select {
 		width: 100%;
 		background-color: #1e2139;
-		border-radius: 4px;
 		color: #fff;
+		border-radius: 4px;
 		padding: 12px 4px;
 		border: none;
 

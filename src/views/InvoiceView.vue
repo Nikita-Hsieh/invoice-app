@@ -19,12 +19,7 @@
 				</div>
 			</div>
 			<div class="right flex">
-				<button
-					@click="toggleEditInvoice(currentInvoice.docId)"
-					class="dark-purple"
-				>
-					Edit
-				</button>
+				<button @click="toggleEditInvoice" class="dark-purple">Edit</button>
 				<button @click="deleteInvoice(currentInvoice.docId)" class="red">
 					Delete
 				</button>
