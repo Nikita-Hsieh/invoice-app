@@ -1,6 +1,8 @@
 <template>
 	<div v-if="currentInvoice" class="invoice-view container">
-		<router-link class="nav-link flex" :to="{ name: 'Home' }">Back</router-link>
+		<router-link class="nav-link flex" :to="{ name: 'Home' }">
+			<img src="@/assets/icon-arrow-left.svg" alt="" /> Go Back
+		</router-link>
 		<!-- Header -->
 		<div class="header flex">
 			<div class="left flex">
@@ -8,7 +10,7 @@
 				<div
 					class="status-button flex"
 					:class="{
-						piad: currentInvoice.invoicePaid,
+						paid: currentInvoice.invoicePaid,
 						draft: currentInvoice.invoiceDraft,
 						pending: currentInvoice.invoicePending,
 					}"
@@ -24,15 +26,15 @@
 					Delete
 				</button>
 				<button
-					v-if="currentInvoice.invoicePending"
 					@click="updateStatusToPaid(currentInvoice.docId)"
+					v-if="currentInvoice.invoicePending"
 					class="green"
 				>
 					Mark as Paid
 				</button>
 				<button
 					v-if="currentInvoice.invoiceDraft || currentInvoice.invoicePaid"
-					@click="updateStatePending"
+					@click="updateStatusToPending(currentInvoice.docId)"
 					class="orange"
 				>
 					Mark as Pending
@@ -43,12 +45,12 @@
 		<!-- Invoice Details -->
 		<div class="invoice-details flex flex-column">
 			<div class="top flex">
-				<div class="left flex">
+				<div class="left flex flex-column">
 					<p><span>#</span>{{ currentInvoice.invoiceId }}</p>
 					<p>{{ currentInvoice.productDescription }}</p>
 				</div>
 				<div class="right flex flex-column">
-					<p>{{ currentInvoice.billerStreetAdress }}</p>
+					<p>{{ currentInvoice.billerStreetAddress }}</p>
 					<p>{{ currentInvoice.billerCity }}</p>
 					<p>{{ currentInvoice.billerZipCode }}</p>
 					<p>{{ currentInvoice.billerCountry }}</p>
@@ -57,19 +59,24 @@
 			<div class="middle flex">
 				<div class="payment flex flex-column">
 					<h4>Invoice Date</h4>
-					<p>{{ currentInvoice.invoiceDate }}</p>
+					<p>
+						{{ currentInvoice.invoiceDate }}
+					</p>
 					<h4>Payment Date</h4>
-					<p>{{ currentInvoice.paymentDueDate }}</p>
+					<p>
+						{{ currentInvoice.paymentDueDate }}
+					</p>
 				</div>
 				<div class="bill flex flex-column">
 					<h4>Bill To</h4>
 					<p>{{ currentInvoice.clientName }}</p>
+					<p>{{ currentInvoice.clientStreetAddress }}</p>
 					<p>{{ currentInvoice.clientCity }}</p>
 					<p>{{ currentInvoice.clientZipCode }}</p>
 					<p>{{ currentInvoice.clientCountry }}</p>
 				</div>
 				<div class="send-to flex flex-column">
-					<h4>Send To</h4>
+					<h4>Sent To</h4>
 					<p>{{ currentInvoice.clientEmail }}</p>
 				</div>
 			</div>
