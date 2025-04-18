@@ -85,26 +85,9 @@ export default createStore({
 			commit('SET_CURRENT_INVOICE', routeId)
 		},
 		async DELETE_INVOICE({ commit }, docId) {
-			const invoiceRef = doc(db, 'invoices', docId)
-			await deleteDoc(invoiceRef)
+			const getInvoice = doc(db, 'invoices', docId)
+			await deleteDoc(getInvoice)
 			commit('DELETE_INVOICE', docId)
-		},
-		async UPDATE_STATUS_TO_PAID({ commit }, docId) {
-			const invoiceRef = doc(db, 'invoices', docId)
-			await updateDoc(invoiceRef, {
-				invoicePaid: true,
-				invoicePending: false,
-			})
-			commit('UPDATE_STATUS_TO_PAID', docId)
-		},
-		async UPDATE_STATUS_TO_PENDING({ commit }, docId) {
-			const invoiceRef = doc(db, 'invoices', docId)
-			await updateDoc(invoiceRef, {
-				invoicePaid: false,
-				invoicePending: true,
-				invoiceDraft: false,
-			})
-			commit('UPDATE_STATUS_TO_PENDING', docId)
 		},
 	},
 	modules: {},
