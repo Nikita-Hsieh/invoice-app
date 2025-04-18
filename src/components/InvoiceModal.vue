@@ -412,6 +412,7 @@ export default {
 	},
 	computed: {
 		...mapState(['editInvoice', 'currentInvoiceArray']),
+		...mapActions(['UPDATE_INVOICE', 'GET_INVOICES']),
 	},
 	watch: {
 		paymentTerms() {
