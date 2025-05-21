@@ -118,8 +118,8 @@
 				<div class="input flex flex-column">
 					<label for="paymentTerms">Payment Terms</label>
 					<select required type="text" id="paymentTerms" v-model="paymentTerms">
-						<option value="30">Net 30 Days</option>
-						<option value="60">Net 60 Days</option>
+						<option value="30">Next 30 Days</option>
+						<option value="60">Next 60 Days</option>
 					</select>
 				</div>
 				<div class="input flex flex-column">
